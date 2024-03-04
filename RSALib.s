@@ -7,7 +7,6 @@
 .global encrypt
 .global decrypt
 
-
 gcd:
   # Contributor: 
   # computes and returns the greatest common divisor of two integers
