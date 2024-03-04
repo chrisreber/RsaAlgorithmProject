@@ -9,7 +9,6 @@
 .global decrypt
 .global getPrime
 
-
 gcd:
     # Contributor: 
     # computes and returns the greatest common divisor of two integers
