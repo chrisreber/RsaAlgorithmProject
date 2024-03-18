@@ -14,58 +14,77 @@ gcd:
 
 pow:
   # Contributor: Andrea
-  # Performs exponentiation of two integers
+  # Purpose: Performs exponentiation of two integers
+  # Inputs: r0 - Number to raise to a power (num)
+  #	    r1 - Power to raise to (pow)
+  # Output: r0 - Product
 
-  # r4 - Counter
-  # r5 - number (input): The number to raise to a power
-  # r6 - pow (input): The power to raise the number to (aka loop max)
-  # r0 - Product (output)
-  
-  # Internal Note 1: number and pow should be nonnegative integers 
+  # Internal Note: number and pow should be nonnegative integers 
   # (error checking should happen before passing to this function)
-  # Internal Note 2: Need to make sure I 1) didn't mix up registers 
-  # in the code and 2) didn't mix up CMP r4, r6 (order matters)
 
+  # Push link register to stack, store all reg vals
+  # so original vals are restored when function ends
+  SUB sp, sp, #12
+  STR lr, [sp, #0]
+  STR r4, [sp, #4]
+  STR r5, [sp, #8]
+   
   # Initialize counter and product
   MOV r4, #0
-  MOV r0, #1
+  MOV r5, #1
 
   StartMultLoop:
 
     # If counter >= loop max, end loop
-    CMP r4, r6
+    CMP r4, r1
     BGE EndMultLoop
 
-    MUL r0, r0, r5  # Multiply number by itself
-
-    ADD r4, r4, #1  # Increment counter
+    # Multiply num by itself and increment counter
+    MUL r5, r5, r0
+    ADD r4, r4, #1
 
     B StartMultLoop
 
   EndMultLoop:
-  MOV pc, lr
+  
+  # Restore original values
+  LDR r5, [sp, #8]
+  LDR r4, [sp, #4]
+  LDR lr, [sp, #0]
+  ADD sp, sp, #12
 
+  MOV pc, lr
   # End pow
 
 modulo:
   # Contributor: Andrea
-  # Function to perform modulo operation
+  # Purpose: Function to perform modulo operation
+  # Inputs: r0 - Dividend (num)
+  # 	    r1 - Divisor (mod)
+  # Output: r0 - Remainder
 
-  # r0 (input) - number, the dividend (I think it has to be r0)
-  # r1 (input) - mod, the divisor (I think it has to be r1)
-  # r0 (output) - Remainder (Ouptuts have to be r0?)
-
-  # Internal Note 1: number and mod should be nonnegative integers 
+  # Internal Note: num and mod should be nonnegative integers 
   # (error checking should happen before passing to this function)
-  # Internal Note 2: Need to make sure I 1) didn't mix up registers 
-  # (lots of overwriting happening)
-    
-  MOV r4, r0      # Copy r0 to r4 (r0 gets overwritten)
-  BL __aeabi_idiv # r0 = number//mod (integer division)
-  MUL r5, r0, r1  # r5 = (number//mod) * mod (<= original number)
-  SUB r0, r4, r5  # Subtract to get remainder
-  MOV pc, lr 
   
+  # Push link register to stack, store all reg vals
+  # so original vals are restored when function ends
+  SUB sp, sp, #12
+  STR lr, [sp, #0]
+  STR r4, [sp, #4]
+  STR r5, [sp, #8]
+    
+  MOV r4, r0      // Store num in r4 (r0 gets overwritten)
+  BL __aeabi_idiv // r0 = num//mod (integer division)
+  MUL r5, r0, r1  // r5 = (num//mod) * mod
+  SUB r0, r4, r5  // r0 = remainder
+  
+  # Restore original values
+  LDR r5, [sp, #8]
+  LDR r4, [sp, #4]
+  LDR lr, [sp, #0]
+  ADD sp, sp, #12
+
+  MOV pc, lr 
   # End modulo
 
 cpubexp:
