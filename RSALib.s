@@ -48,13 +48,14 @@ pow:
   EndMultLoop:
   
   # Restore original values
-  LDR r5, [sp, #8]
-  LDR r4, [sp, #4]
   LDR lr, [sp, #0]
+  LDR r4, [sp, #4]
+  LDR r5, [sp, #8]
   ADD sp, sp, #12
 
   MOV pc, lr
-  # End pow
+
+# End pow
 
 modulo:
   # Contributor: Andrea
@@ -79,15 +80,85 @@ modulo:
   SUB r0, r4, r5  // r0 = remainder
   
   # Restore original values
-  LDR r5, [sp, #8]
-  LDR r4, [sp, #4]
   LDR lr, [sp, #0]
+  LDR r4, [sp, #4]
+  LDR r5, [sp, #8]
   ADD sp, sp, #12
 
   MOV pc, lr 
-  # End modulo
 
-cpubexp:
+# End modulo
+
+.text
+isPrime:
+  # Contributor: Andrea Henry
+  # Purpose: Determines whether the input number is prime
+  # Inputs: r0 - Number to check primality for (num)
+  # Output: r0 - 0 if number is not prime, 1 if number is prime
+
+  SUB sp, sp, #20
+  STR lr, [sp, #0]
+  STR r4, [sp, #4]
+  STR r5, [sp, #8]
+  STR r6, [sp, #12]
+  STR r7, [sp, #16]
+
+  # Save base array and size
+  LDR r4, =primeArray
+  LDR r5, =primeArraySize
+  LDR r5, [r5]
+
+  MOV r7, r0  // Store num in preserved register
+  
+  # Initialize loop for checking primes
+  # r4 - Array base
+  # r5 - End loop index
+  # r6 - Counter
+
+  MOV r6, #0
+  startCheckLoop:
+
+    # If counter >= array size, end loop
+    CMP r6, r5
+    BGE endCheckLoop
+    
+    # Set up inputs for mod: r0 = num, r1 = prime
+    MOV r0, r7
+    ADD r1, r4, r6, LSL #2
+    LDR r1, [r1, #0]
+    BL mod
+
+    # num mod prime == 0 --> return 0 (false, not prime)
+    CMP r0, #0
+    BEQ return
+    ADD r6, r6, #1  // Otherwise, increment counter
+    B startCheckLoop
+
+  endCheckLoop:
+
+  MOV r0, #1  // No number was divisible, set r0 = 1 (true, prime)
+    
+  return:
+    # Restore all original values
+    LDR lr, [sp, #0]
+    LDR r4, [sp, #4]
+    LDR r5, [sp, #8]
+    LDR r6, [sp, #12]
+    LDR r7, [sp, #16]
+    ADD sp, sp, #20
+
+    MOV pc, lr
+
+.data
+   primeArray:  .word 2
+                .word 3
+                .word 5
+                .word 7
+   primeArraySize:  .word 4  
+
+# end isPrime 
+
+ cpubexp:
   # Contributor:
   # generates the public key
 
@@ -104,3 +175,4 @@ decrypt:
   # decrypts a .txt file
 
 .data
+
