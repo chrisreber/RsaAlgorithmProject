@@ -7,6 +7,7 @@
 .global cprivexp
 .global encrypt
 .global decrypt
+.global getPrime
 
 
 gcd:
@@ -82,13 +83,13 @@ modulo:
     ADD sp, sp, #12
     MOV pc, lr 
 
-# END OF modulo
+# END OF modulo -------
 
 # Function: isPrime
 # Contributor: Andrea Henry
 # Purpose: Determines whether the input number is prime
 # Inputs: r0 - Number to check primality for (num)
-# Output: r0 - 0 if number is not prime, 1 if number is prime
+# Output: r0 - 0 if num is not prime, 1 if num is prime
 
 .text
 isPrime:  
@@ -117,7 +118,7 @@ isPrime:
     MOV r3, #0
     CMP r1, r3
     BEQ SetNotPrime
-        # Save base array and size
+        # r > 1 - Save base array and array size
         LDR r4, =primeArray
         LDR r5, =primeArraySize
         LDR r5, [r5]
@@ -196,5 +197,98 @@ decrypt:
   # Contributor:
   # decrypts a .txt file
 
-.data
 
+# END decrypt -------
+
+# Function: getPrime
+# Contributor: Andrea Henry
+# Purpose: Prompts user for input until they enter positive prime p or q
+# Inputs: r0 - 1 if prompting for p, 2 if prompting for q
+# Output: r0 - User-input positive prime number
+
+.text
+getPrime:
+    # Push lr to stack, store original preserved reg vals
+    SUB sp, sp, #12
+    STR lr, [sp, #0]
+    STR r4, [sp, #4]
+    STR r5, [sp, #8]
+
+    # Adjust prompt depending on whether prompting for p or q
+    CMP r0, #1
+    LDREQ r4, =pPrompt
+    CMP r0, #2
+    LDREQ r4, =qPrompt
+
+    StartGetPrimeLoop:
+        # Print prompt
+        LDR r0, =primeInputPrompt
+        MOV r1, r4  // r4 is input parameter for p or q
+        BL printf
+
+        # Get input
+        LDR r0, =primeInputFormat
+        LDR r1, =inputNum
+        BL scanf
+
+        # Check primality
+        LDR r0, =inputNum
+        LDR r0, [r0]
+        MOV r5, r0  // Save input
+
+        # input >= 2?
+        MOV r1, #0
+        CMP r0, #2
+        MOVGE r1, #1
+        
+        # input <= 50
+        MOV r2, #0
+        CMP r0, #50
+        MOVLE r2, #1
+        
+        # If input < 2 or > 50, error
+        AND r1, r1, r2
+        CMP r1, #1
+        BNE InvalidInputError
+
+            # If 2 <= input <= 50, test primality
+            BL isPrime
+
+            # If input is prime, end loop
+            CMP r0, #0
+            BNE EndGetPrimeLoop
+
+                # input not prime - Print error and prompt again
+                LDR r0, =notPrimeErrorMsg
+                BL printf
+                B StartGetPrimeLoop
+
+        InvalidInputError:
+            # input < 2 or > 50 - Print error and prompt again
+            LDR r0, =invalidInputMsg
+            BL printf
+            B StartGetPrimeLoop
+
+    EndGetPrimeLoop:
+        # Restore saved input prime
+        MOV r0, r5
+
+        # Pop stack and exit
+        LDR lr, [sp, #0]
+        LDR r4, [sp, #4]
+        LDR r5, [sp, #8]
+        ADD sp, sp, #12
+        MOV pc, lr
+
+.data
+    # Prompt for user input
+    primeInputPrompt: .asciz "\nEnter prime number between 2-50 (%s): "
+    # Modify input prompt to be for p or q
+    pPrompt: .asciz "p"
+    qPrompt: .asciz "q"
+    # User input and format
+    primeInputFormat: .asciz "%d"
+    inputNum: .word 0
+    # Error messages
+    notPrimeErrorMsg: .asciz "ERROR: Input not prime.\n"
+    invalidInputMsg: .asciz "ERROR: Input must be >= 2 and <= 50.\n"
