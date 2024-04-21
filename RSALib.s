@@ -27,13 +27,28 @@ gcd:
   BEQ gcdReturn
 
   # else, compute mod and start new recursive call
+  CMP r0, r1  // compare the args first, higher arg MUST be in r0
+  BGE computeMod
+
+  # r1 is bigger than r0, swap the arguments so the modulo function works
+  MOV r2, r0
+  MOV r0, r1
+  MOV r1, r2
+
+  computeMod:
+    MOV r4, r1  // stash r1 in r4 for safety
+    BL modulo   // returns modulo on r0
+    MOV r1, r4  // put r4 back in r1 for recursive call
+    BL gcd      // recrsively restart function
+
+  # else, compute mod and start new recursive call
   MOV r4, r1  // stash r1 in r4 for safety
   BL modulo   // returns modulo on r0
   MOV r1, r4  // put r4 back in r1 for recursive call
   BL gcd      // recrsively restart function
 
   gcdReturn:
-    MOV r1, r0 // GCD will be in r1 after recursive calls
+    MOV r0, r1 // GCD will be in r1 after recursive calls
 
     # pop the stack and return
     LDR lr, [sp, #0]
