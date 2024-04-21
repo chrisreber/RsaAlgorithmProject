@@ -11,7 +11,6 @@
 
 gcd:
   # Contributor: Chris Reber
-  # Contributor: Chris Reber
   # computes and returns the greatest common divisor of two integers
   # uses Euclidean algorithm: https://www.geeksforgeeks.org/euclidean-algorithms-basic-and-extended/#
   # args: r0, r1 -> integers between which to compute GCD
