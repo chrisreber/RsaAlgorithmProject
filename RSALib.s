@@ -17,10 +17,9 @@ gcd:
   # returns: gcd on r0
 
   # push the stack
-  SUB sp, sp, #12
+  SUB sp, sp, #8
   STR lr, [sp]
   STR r4, [sp, #4]
-  STR r5, [sp, #8]
 
   # check if r0 is 0
   CMP r0, #0
@@ -53,8 +52,7 @@ gcd:
     # pop the stack and return
     LDR lr, [sp, #0]
     LDR r4, [sp, #4]
-    LDR r5, [sp, #8]
-    ADD sp, sp, #12
+    ADD sp, sp, #8
     MOV pc, lr 
 # end gcd
 
