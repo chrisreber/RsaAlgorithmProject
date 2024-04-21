@@ -21,6 +21,21 @@ main:
     MOV r1, r0
     LDR r0, =moduloTest
     BL printf
+
+    # test greatest common factor function
+    MOV r0, #16
+    MOV r1, #12
+    BL gcd
+    MOV r1, r0
+    LDR r0, =gcdTest
+    BL printf
+
+    MOV r0, #16
+    MOV r1, #11
+    BL gcd
+    MOV r1, r0
+    LDR r0, =gcdTest
+    BL printf
     # -----End Chris testing-----
 
     @ # Prompt for and receive input for p and q
@@ -65,3 +80,4 @@ main:
     # For testing
     testTotient: .asciz "Totient is: %d\n\n"
     moduloTest:  .asciz "Modulo is: %d\n"
+    gcdTest:     .asciz "GCD is: %d\n"
