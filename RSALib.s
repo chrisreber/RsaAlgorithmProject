@@ -40,12 +40,6 @@ gcd:
     MOV r1, r4  // put r4 back in r1 for recursive call
     BL gcd      // recrsively restart function
 
-  # else, compute mod and start new recursive call
-  MOV r4, r1  // stash r1 in r4 for safety
-  BL modulo   // returns modulo on r0
-  MOV r1, r4  // put r4 back in r1 for recursive call
-  BL gcd      // recrsively restart function
-
   gcdReturn:
     MOV r0, r1 // GCD will be in r1 after recursive calls
 
