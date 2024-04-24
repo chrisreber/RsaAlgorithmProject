@@ -229,9 +229,46 @@ encrypt:
   # encrypts an input string
 
 decrypt:
-  # Contributor:
-  # decrypts a .txt file
+    # Contributor: Chris Reber
+    # decrypts a .txt file
+    # args: r0 - private key | r1 - modulus (p * q)
+    # return: no return, outputs file 'plaintext.txt'
+    # assumes file name is 'encrypted.txt'
 
+    # push the stack
+    SUB sp, sp, #8
+    STR lr, [sp]
+    STR r4, [sp, #4]
+
+    # open the file
+    LDR r0, =fileName // file name in first arg
+    MOV r1, #0  // no flags
+    MOV r2, #0  // open read-only
+    MOV r7, #5  // syscall number for 'open'
+    SWI #0      // invoke syscall
+
+    # error check
+    CMP r0, #0
+    BLE openFileError
+    B decryptReturn
+
+    openFileError:
+        LDR r0, =openFileErrMsg
+        BL printf
+
+    decryptReturn:
+        # pop the stack and return
+        LDR lr, [sp, #0]
+        LDR r4, [sp, #4]
+        ADD sp, sp, #8
+        MOV pc, lr 
+
+.data
+    fileName:       .asciz  "encrypted.txt"
+    outputFile:     .asciz  "plaintext.txt"
+    openFileErrMsg: .asciz  "Error opening file 'encrypted.txt'"
+    readBuffer:     .space  255
+    plaintext:      .asciz  ""
 
 # END decrypt -------
 
