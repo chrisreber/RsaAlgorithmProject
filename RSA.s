@@ -6,6 +6,38 @@ main:
     SUB sp, sp, #4
     STR lr, [sp, #0]
 
+    # -----Chris testing-----
+    # double check modulo function
+    MOV r0, #4
+    MOV r1, #3
+    BL modulo
+    MOV r1, r0
+    LDR r0, =moduloTest
+    BL printf
+
+    MOV r0, #4
+    MOV r1, #1
+    BL modulo
+    MOV r1, r0
+    LDR r0, =moduloTest
+    BL printf
+
+    # test greatest common factor function
+    MOV r0, #16
+    MOV r1, #12
+    BL gcd
+    MOV r1, r0
+    LDR r0, =gcdTest
+    BL printf
+
+    MOV r0, #16
+    MOV r1, #11
+    BL gcd
+    MOV r1, r0
+    LDR r0, =gcdTest
+    BL printf
+    # -----End Chris testing-----
+
     # Prompt for and receive input for p and q
     # Contributor: Andrea Henry
    
@@ -47,4 +79,5 @@ main:
 .data
     # For testing
     testTotient: .asciz "Totient is: %d\n\n"
-
+    moduloTest:  .asciz "Modulo is: %d\n"
+    gcdTest:     .asciz "GCD is: %d\n"

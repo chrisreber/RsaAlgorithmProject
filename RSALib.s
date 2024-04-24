@@ -9,11 +9,46 @@
 .global decrypt
 .global getPrime
 
-
 gcd:
-    # Contributor: 
-    # computes and returns the greatest common divisor of two integers
+  # Contributor: Chris Reber
+  # computes and returns the greatest common divisor of two integers
+  # uses Euclidean algorithm: https://www.geeksforgeeks.org/euclidean-algorithms-basic-and-extended/#
+  # args: r0, r1 -> integers between which to compute GCD
+  # returns: gcd on r0
 
+  # push the stack
+  SUB sp, sp, #8
+  STR lr, [sp]
+  STR r4, [sp, #4]
+
+  # check if r0 is 0
+  CMP r0, #0
+  BEQ gcdReturn
+
+  # else, compute mod and start new recursive call
+  CMP r0, r1  // compare the args first, higher arg MUST be in r0
+  BGE computeMod
+
+  # r1 is bigger than r0, swap the arguments so the modulo function works
+  MOV r2, r0
+  MOV r0, r1
+  MOV r1, r2
+
+  computeMod:
+    MOV r4, r1  // stash r1 in r4 for safety
+    BL modulo   // returns modulo on r0
+    MOV r1, r4  // put r4 back in r1 for recursive call
+    BL gcd      // recrsively restart function
+
+  gcdReturn:
+    MOV r0, r1 // GCD will be in r1 after recursive calls
+
+    # pop the stack and return
+    LDR lr, [sp, #0]
+    LDR r4, [sp, #4]
+    ADD sp, sp, #8
+    MOV pc, lr 
+# end gcd
 
 # Function: pow
 # Contributor: Andrea
