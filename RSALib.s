@@ -250,11 +250,47 @@ decrypt:
     # error check
     CMP r0, #0
     BLE openFileError
-    B decryptReturn
+
+    # move file descriptor to r6
+    MOV r6, r0
+    
+    # no error -> read file contents to buffer
+    readFileLoopStart:
+        MOV r0, r6
+        LDR r1, =readBuffer
+        MOV r2, #1      // read one byte (character) at a time
+        MOV r7, #3      // read file syscall
+        SWI #0
+
+        # error check
+        CMP r0, #0
+        BLT readFileError
+        BEQ endOfFile
+
+        # process the read character
+        LDRB r5, [r1]   // load the byte from the read buffer
+
+        B readFileLoopStart
+    # end read file loop
+
+    endOfFile:
+        # reached end of file contents, for now return
+        B closeFile
+
+    readFileError:
+        LDR r0, =readFileErrMsg
+        BL printf
+        B closeFile
 
     openFileError:
         LDR r0, =openFileErrMsg
         BL printf
+
+    closeFile:
+        MOV r0, r6  // file handle to r0
+        MOV r7, #6  // file close syscall
+        SWI #0      // invoke syscall
+        B decryptReturn
 
     decryptReturn:
         # pop the stack and return
@@ -266,7 +302,8 @@ decrypt:
 .data
     fileName:       .asciz  "encrypted.txt"
     outputFile:     .asciz  "plaintext.txt"
-    openFileErrMsg: .asciz  "Error opening file 'encrypted.txt'"
+    openFileErrMsg: .asciz  "Error opening file 'encrypted.txt'\n"
+    readFileErrMsg: .asciz  "Error reading file contents\n"
     readBuffer:     .space  255
     plaintext:      .asciz  ""
 
