@@ -10,38 +10,38 @@ main:
     SUB sp, sp, #4
     STR lr, [sp, #0]
 	
-	# Display user actions
-	LDR r0, =userActions
-	BL printf
+	# Initialize r10 to hold Boolean for whether keys were generated
+	MOV r10, #0
 
-	# Get user's choice (fgets avoids loop caused if string is input)
-	LDR r0, =inputBuffer
-	MOV r1, #40
-	LDR r2, =stdin
-	LDR r2, [r2]
-	BL fgets
+	MainMenu:
+		# Display user actions
+		LDR r0, =userActions
+		BL printf
 
-	# Parse and store the integer
-	BL atoi
-	MOV r4, r0
+		# Get user's choice
+		LDR r0, =selectionFormat
+		LDR r1, =selectionInput
+		BL scanf
+		LDR r4, =selectionInput
+		LDR r4, [r4]
 
-	# Branch to other parts of the function based on selection
-	CMP r4, #1
-	BEQ GenKeys
+		# Branch to other parts of the function based on selection
+		CMP r4, #1
+		BEQ GenKeys
 
-		CMP r4, #2
-		BEQ EncryptMessage
+			CMP r4, #2
+			BEQ EncryptMessage
 
-			CMP r4, #3
-			BEQ DecryptMessage
+				CMP r4, #3
+				BEQ DecryptMessage
 
-				CMP r4, #4
-				BEQ ExitProgram
+					CMP r4, #4
+					BEQ ExitProgram
 
-					# Print invalid input message
-					LDR r0, =selectionErrorMsg
-					BL printf
-					B ExitProgram
+						# Print invalid input message
+						LDR r0, =selectionErrorMsg
+						BL printf
+						B ExitProgram
 
 	GenKeys:
 		# -----Chris testing-----
@@ -68,8 +68,8 @@ main:
 		LDR r0, =gcdTest
 		BL printf
 
-		MOV r0, #252
-		MOV r1, #18
+		MOV r0, #16
+		MOV r1, #11
 		BL gcd
 		MOV r1, r0
 		LDR r0, =gcdTest
@@ -106,12 +106,42 @@ main:
 		MOV r1, r7
 		BL printf
 
-	  # For future operations, T is in r7. Other regs can be overwritten
-  	
+	    # T is in r7. Other regs can be overwritten
+  		
+		# Update r10 to True; keys are created
+		MOV r10, #1  
+
+		# Print success message and go to menu
+		LDR r0, =keysGeneratedMsg
+		BL printf
+		B MainMenu		
+
 	EncryptMessage:
+		
+		# See if keys have been generated
+		CMP r10, #0
+		BNE ContinueEncrypt
+
+			# Notify user that they have to generate keys first
+			LDR r0, =needKeysMsg
+			BL printf
+			B GenKeys
+
+		ContinueEncrypt:
 
 	DecryptMessage:
   
+		# See if keys have been generated
+		CMP r10, #0
+		BNE ContinueDecrypt
+
+			# Notify user that they have to generate keys first
+			LDR r0, =needKeysMsg
+			BL printf
+			B GenKeys
+
+		ContinueDecrypt:
+
 	ExitProgram:
 		# Print newline for formatting
 		LDR r0, =newLine
@@ -124,9 +154,12 @@ main:
 
 .data
 	# Starting menu
-	userActions: .asciz "\nWelcome to the RSA Algorithm.\n\nChoose an option:\n[1] Generate private and public keys\n[2] Encrypt a message\n[3] Decrypt a message\n[4] Exit\n\nYour Selection: "
-	inputBuffer: .space 40
+	userActions: .asciz "\nChoose an option:\n[1] Generate private and public keys\n[2] Encrypt a message\n[3] Decrypt a message\n[4] Exit\n\nYour Selection: "
+	selectionFormat: .asciz "%d"
+	selectionInput: .word 0
 	selectionErrorMsg: .asciz "Invalid selection.\n"
+	needKeysMsg: .asciz "Invalid: Keys not generated. Generating now...\n\n"
+	keysGeneratedMsg: .asciz "Keys generated.\n\n----------\n"
 	newLine: .asciz "\n"
 
     # For testing
