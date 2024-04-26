@@ -240,6 +240,10 @@ decrypt:
     STR lr, [sp]
     STR r4, [sp, #4]
 
+    # move the keys into safe registers
+    MOV r11, r0
+    MOV r12, r1
+
     # open the file
     LDR r0, =fileName // file name in first arg
     MOV r1, #0  // no flags
@@ -255,6 +259,7 @@ decrypt:
     MOV r6, r0
     
     # no error -> read file contents to buffer
+    MOV r3, #0  // use r3 as loop counter
     readFileLoopStart:
         MOV r0, r6
         LDR r1, =readBuffer
@@ -268,28 +273,75 @@ decrypt:
         BEQ endOfFile
 
         # process the read character
-        LDRB r5, [r1]   // load the byte from the read buffer
+        # reference:
+        # Using our private key values (n, d) for the equation m = 𝒄^𝒅 mod n we have the following:
+            # • m is the decrypted individual plaintext character of our message
+            # • c is our cipher text (encrypted text) value
+            # • d is our private key exponent from step 2
+            # • n is the calculated modulus from step 2 for our public and private keys
+        LDRB r5, [r1]       // load the encrypted byte from the read buffer
 
-        B readFileLoopStart
+        # *****do the math here, save result on r5*****
+
+        LDR r4, =outBuffer
+        STRB r5, [r4, r3]   // save the decrypted byte to the output buffer
+        ADD r3, #1          // increment loop counter
+        B readFileLoopStart // restart loop
     # end read file loop
 
     endOfFile:
-        # reached end of file contents, for now return
-        B closeFile
+        # reached end of file contents
+        # write content of outputBuffer to plaintext.txt
+
+        # open file for writing
+        LDR r0, =outputFile
+        MOV r1, #0x42
+        LDR r2, =#0777              // file is globally read/write-able
+        MOV r7, #5                  // syscall for file write
+        SWI #0                      // invoke syscall
+
+        # error check
+        CMP r0, #0
+        BLE writeFileError
+
+        # write the file
+        LDR r1, =outBuffer
+        LDR r2, =bufferSize        // num bytes to write
+        LDR r2, [r2]
+        writeLoopStart:
+            CMP r2, #0
+            BEQ closeOutFile
+            MOV r7, #4              // syscall write
+            SWI #0                  // invoke syscall
+            SUB r2, r2, #1
+            B writeLoopStart        // restart loop to write the next byte
+        # write loop end
+        B closeOutFile
 
     readFileError:
         LDR r0, =readFileErrMsg
         BL printf
-        B closeFile
+        B closeInputFile
 
     openFileError:
         LDR r0, =openFileErrMsg
         BL printf
 
-    closeFile:
+    writeFileError:
+        LDR r0, =writeFileErrMsg
+        BL printf
+        B decryptReturn
+
+    closeInputFile:
         MOV r0, r6  // file handle to r0
         MOV r7, #6  // file close syscall
         SWI #0      // invoke syscall
+        B decryptReturn
+
+    closeOutFile:
+        MOV r0, r4              // Move file handle to r0
+        MOV r7, #6              // syscall close
+        SWI #0                  // invoke syscall
         B decryptReturn
 
     decryptReturn:
@@ -304,8 +356,10 @@ decrypt:
     outputFile:     .asciz  "plaintext.txt"
     openFileErrMsg: .asciz  "Error opening file 'encrypted.txt'\n"
     readFileErrMsg: .asciz  "Error reading file contents\n"
+    writeFileErrMsg:.asciz  "Error writing plaintext file\n"
     readBuffer:     .space  255
-    plaintext:      .asciz  ""
+    outBuffer:      .space  255
+    bufferSize:     .word   255    
 
 # END decrypt -------
 
