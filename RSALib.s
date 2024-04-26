@@ -233,7 +233,7 @@ decrypt:
     # decrypts a .txt file
     # args: r0 - private key | r1 - modulus (p * q)
     # return: no return, outputs file 'plaintext.txt'
-    # assumes file name is 'encrypted.txt'
+    # assumes input file name is 'encrypted.txt'
 
     # push the stack
     SUB sp, sp, #8
@@ -289,35 +289,6 @@ decrypt:
         B readFileLoopStart // restart loop
     # end read file loop
 
-    endOfFile:
-        # reached end of file contents
-        # write content of outputBuffer to plaintext.txt
-
-        # open file for writing
-        LDR r0, =outputFile
-        MOV r1, #0x42
-        LDR r2, =#0777              // file is globally read/write-able
-        MOV r7, #5                  // syscall for file write
-        SWI #0                      // invoke syscall
-
-        # error check
-        CMP r0, #0
-        BLE writeFileError
-
-        # write the file
-        LDR r1, =outBuffer
-        LDR r2, =bufferSize        // num bytes to write
-        LDR r2, [r2]
-        writeLoopStart:
-            CMP r2, #0
-            BEQ closeOutFile
-            MOV r7, #4              // syscall write
-            SWI #0                  // invoke syscall
-            SUB r2, r2, #1
-            B writeLoopStart        // restart loop to write the next byte
-        # write loop end
-        B closeOutFile
-
     readFileError:
         LDR r0, =readFileErrMsg
         BL printf
@@ -327,21 +298,17 @@ decrypt:
         LDR r0, =openFileErrMsg
         BL printf
 
-    writeFileError:
-        LDR r0, =writeFileErrMsg
-        BL printf
-        B decryptReturn
+    endOfFile:
+        LDR r0, =outputFile
+        LDR r1, =outBuffer
+        LDR r2, =bufferSize
+        LDR r2, [r2]
+        BL writeBufferToFile
 
     closeInputFile:
         MOV r0, r6  // file handle to r0
         MOV r7, #6  // file close syscall
         SWI #0      // invoke syscall
-        B decryptReturn
-
-    closeOutFile:
-        MOV r0, r4              // Move file handle to r0
-        MOV r7, #6              // syscall close
-        SWI #0                  // invoke syscall
         B decryptReturn
 
     decryptReturn:
@@ -359,9 +326,66 @@ decrypt:
     writeFileErrMsg:.asciz  "Error writing plaintext file\n"
     readBuffer:     .space  255
     outBuffer:      .space  255
-    bufferSize:     .word   255    
+    bufferSize:     .word   255
+# end decrypt function
 
-# END decrypt -------
+.text
+writeBufferToFile:
+    # Contributor: Chris Reber
+    # Writes contents of a .space buffer to a .txt output file
+    # args: r0 - output file name|r1 - .space buffer reference containing content to write|r2 - buffer size (word)
+    # return: no return, outputs file with name provided on r0
+
+    # push the stack
+    SUB sp, sp, #4
+    STR lr, [sp]
+
+    # save output buffer reference to r4 for later
+    MOV r4, r1
+
+    # save buffer size for later
+    MOV r5, r2
+
+    # open file for writing
+    MOV r1, #0x42
+    LDR r2, =#0777              // file is globally read/write-able
+    MOV r7, #5                  // syscall for file write
+    SWI #0                      // invoke syscall
+
+    # error check
+    CMP r0, #0
+    BLE writeFileError
+
+    # write the file
+    MOV r1, r4                 // move the output buffer back
+    MOV r2, r5                 // move buffer size back
+    writeLoopStart:
+        CMP r2, #0
+        BEQ closeOutFile
+        MOV r7, #4              // syscall write
+        SWI #0                  // invoke syscall
+        SUB r2, r2, #1
+        B writeLoopStart        // restart loop to write the next byte
+    # write loop end
+    B closeOutFile
+
+    writeFileError:
+        LDR r0, =writeFileErrMsg
+        BL printf
+        B writeFileReturn
+
+    closeOutFile:
+        MOV r0, r4              // move file handle to r0
+        MOV r7, #6              // syscall close
+        SWI #0                  // invoke syscall
+        B writeFileReturn
+
+    writeFileReturn:
+        # pop the stack and return
+        LDR lr, [sp, #0]
+        ADD sp, sp, #4
+        MOV pc, lr 
+# end function writeBufferToFile
 
 # Function: getPrime
 # Contributor: Andrea Henry
