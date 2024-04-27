@@ -229,11 +229,169 @@ encrypt:
   # encrypts an input string
 
 decrypt:
-  # Contributor:
-  # decrypts a .txt file
+    # Contributor: Chris Reber
+    # decrypts a .txt file
+    # args: r0 - private key | r1 - modulus (p * q)
+    # return: no return, outputs file 'plaintext.txt'
+    # assumes input file name is 'encrypted.txt'
 
+    # push the stack
+    SUB sp, sp, #8
+    STR lr, [sp]
+    STR r4, [sp, #4]
 
-# END decrypt -------
+    # move the keys into safe registers
+    MOV r11, r0
+    MOV r12, r1
+
+    # open the file
+    LDR r0, =fileName // file name in first arg
+    MOV r1, #0  // no flags
+    MOV r2, #0  // open read-only
+    MOV r7, #5  // syscall number for 'open'
+    SWI #0      // invoke syscall
+
+    # error check
+    CMP r0, #0
+    BLE openFileError
+
+    # move file descriptor to r6
+    MOV r6, r0
+    
+    # no error -> read file contents to buffer
+    MOV r3, #0  // use r3 as loop counter
+    readFileLoopStart:
+        MOV r0, r6
+        LDR r1, =readBuffer
+        MOV r2, #1      // read one byte (character) at a time
+        MOV r7, #3      // read file syscall
+        SWI #0
+
+        # error check
+        CMP r0, #0
+        BLT readFileError
+        BEQ endOfFile
+
+        # process the read character
+        # reference:
+        # Using our private key values (n, d) for the equation m = 𝒄^𝒅 mod n we have the following:
+            # • m is the decrypted individual plaintext character of our message
+            # • c is our cipher text (encrypted text) value
+            # • d is our private key exponent from step 2
+            # • n is the calculated modulus from step 2 for our public and private keys
+        LDRB r5, [r1]       // load the encrypted byte from the read buffer
+        # do c^d first
+        MOV r0, r5          // move encrypted byte to r0 (exponent base)
+        MOV r1, r11         // move private key to r1 (exponent power)
+        BL pow              // do exponentiation, result on r0
+
+        MOV r1, r12         // move n (that is, p * q) to r1
+        BL modulo           // perform modulus
+        MOV r5, r0          // move resulting character to r5
+
+        LDR r4, =outBuffer
+        STRB r5, [r4, r3]   // save the decrypted byte to the output buffer
+        ADD r3, #1          // increment loop counter
+        B readFileLoopStart // restart loop
+    # end read file loop
+
+    readFileError:
+        LDR r0, =readFileErrMsg
+        BL printf
+        B closeInputFile
+
+    openFileError:
+        LDR r0, =openFileErrMsg
+        BL printf
+
+    endOfFile:
+        LDR r0, =outputFile
+        LDR r1, =outBuffer
+        LDR r2, =bufferSize
+        LDR r2, [r2]
+        BL writeBufferToFile
+
+    closeInputFile:
+        MOV r0, r6  // file handle to r0
+        MOV r7, #6  // file close syscall
+        SWI #0      // invoke syscall
+        B decryptReturn
+
+    decryptReturn:
+        # pop the stack and return
+        LDR lr, [sp, #0]
+        LDR r4, [sp, #4]
+        ADD sp, sp, #8
+        MOV pc, lr 
+
+.data
+    fileName:       .asciz  "encrypted.txt"
+    outputFile:     .asciz  "plaintext.txt"
+    openFileErrMsg: .asciz  "Error opening file 'encrypted.txt'\n"
+    readFileErrMsg: .asciz  "Error reading file contents\n"
+    writeFileErrMsg:.asciz  "Error writing plaintext file\n"
+    readBuffer:     .space  255
+    outBuffer:      .space  255
+    bufferSize:     .word   255
+# end decrypt function
+
+.text
+writeBufferToFile:
+    # Contributor: Chris Reber
+    # Writes contents of a .space buffer to a .txt output file
+    # args: r0 - output file name|r1 - .space buffer reference containing content to write|r2 - buffer size (word)
+    # return: no return, outputs file with name provided on r0
+
+    # push the stack
+    SUB sp, sp, #4
+    STR lr, [sp]
+
+    # save output buffer reference to r4 for later
+    MOV r4, r1
+
+    # save buffer size for later
+    MOV r5, r2
+
+    # open file for writing
+    MOV r1, #0x42
+    LDR r2, =#0777              // file is globally read/write-able
+    MOV r7, #5                  // syscall for file write
+    SWI #0                      // invoke syscall
+
+    # error check
+    CMP r0, #0
+    BLE writeFileError
+
+    # write the file
+    MOV r1, r4                 // move the output buffer back
+    MOV r2, r5                 // move buffer size back
+    writeLoopStart:
+        CMP r2, #0
+        BEQ closeOutFile
+        MOV r7, #4              // syscall write
+        SWI #0                  // invoke syscall
+        SUB r2, r2, #1
+        B writeLoopStart        // restart loop to write the next byte
+    # write loop end
+    B closeOutFile
+
+    writeFileError:
+        LDR r0, =writeFileErrMsg
+        BL printf
+        B writeFileReturn
+
+    closeOutFile:
+        MOV r0, r4              // move file handle to r0
+        MOV r7, #6              // syscall close
+        SWI #0                  // invoke syscall
+        B writeFileReturn
+
+    writeFileReturn:
+        # pop the stack and return
+        LDR lr, [sp, #0]
+        ADD sp, sp, #4
+        MOV pc, lr 
+# end function writeBufferToFile
 
 # Function: getPrime
 # Contributor: Andrea Henry
