@@ -143,7 +143,7 @@ main:
 			ADD r1, sp, #4
 			BL scanf
 
-			# Testing: Check that N is still the same
+			# Testing: Check that N is still the same (should be in r6)
 			LDR r0, =testN2
 			MOV r1, r6
 			BL printf
@@ -152,9 +152,13 @@ main:
 			MOV r1, #7  // temporary, p=3, q=5
 			MOV r2, r6 
 
+			# Encrypt the string
 			ADD r0, sp, #4
 			BL encrypt
 			ADD sp, sp, #40
+
+			# Return to main menu
+			B MainMenu
 
 	DecryptMessage:
   
@@ -168,6 +172,8 @@ main:
 			B GenKeys
 
 		ContinueDecrypt:
+			# MOV r0, rXXX  // d (private key)
+			MOV r1, r6  // n (modulus)			
 			BL decrypt
 
 	ExitProgram:
