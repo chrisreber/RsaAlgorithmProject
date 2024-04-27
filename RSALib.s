@@ -280,8 +280,14 @@ decrypt:
             # • d is our private key exponent from step 2
             # • n is the calculated modulus from step 2 for our public and private keys
         LDRB r5, [r1]       // load the encrypted byte from the read buffer
+        # do c^d first
+        MOV r0, r5          // move encrypted byte to r0 (exponent base)
+        MOV r1, r11         // move private key to r1 (exponent power)
+        BL pow              // do exponentiation, result on r0
 
-        # *****do the math here, save result on r5*****
+        MOV r1, r12         // move n (that is, p * q) to r1
+        BL modulo           // perform modulus
+        MOV r5, r0          // move resulting character to r5
 
         LDR r4, =outBuffer
         STRB r5, [r4, r3]   // save the decrypted byte to the output buffer
