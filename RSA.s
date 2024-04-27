@@ -94,6 +94,11 @@ main:
 
 		MUL r6, r4, r5  // r6 = n = pq
 
+		# Testing: Check initial N
+		LDR r0, =testN1
+		MOV r1, r6
+		BL printf
+
 		# Calculate totient, T = (p-1)(q-1)
 		# Contributor: Andrea Henry
 
@@ -128,6 +133,28 @@ main:
 			B GenKeys
 
 		ContinueEncrypt:
+			# Prompt user for string to encrypt
+			LDR r0, =encryptPrompt
+			BL printf
+
+			# Get input string from user
+			SUB sp, sp, #40
+			LDR r0, =encryptInputFormat
+			ADD r1, sp, #4
+			BL scanf
+
+			# Testing: Check that N is still the same
+			LDR r0, =testN2
+			MOV r1, r6
+			BL printf
+
+			# Load e and n into r1, r2
+			MOV r1, #7  // temporary, p=3, q=5
+			MOV r2, r6 
+
+			ADD r0, sp, #4
+			BL encrypt
+			ADD sp, sp, #40
 
 	DecryptMessage:
   
@@ -162,7 +189,13 @@ main:
 	keysGeneratedMsg: .asciz "Keys generated.\n\n----------\n"
 	newLine: .asciz "\n"
 
+	# For encrypt function
+	encryptPrompt: .asciz "\nEnter a short phrase: "
+	encryptInputFormat: .asciz "%s"
+
     # For testing
     testTotient: .asciz "Totient is: %d\n\n"
     moduloTest:  .asciz "Modulo is: %d\n"
     gcdTest:     .asciz "GCD is: %d\n"
+	testN1: .asciz "N is: %d\n"
+	testN2: .asciz "Before encrypt, N is: %d\n"
