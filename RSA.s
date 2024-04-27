@@ -168,6 +168,7 @@ main:
 			B GenKeys
 
 		ContinueDecrypt:
+			BL decrypt
 
 	ExitProgram:
 		# Print newline for formatting

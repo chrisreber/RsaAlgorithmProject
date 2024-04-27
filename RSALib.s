@@ -230,7 +230,7 @@ cprivexp:
 # Contributor: Andrea Henry
 # Purpose: Encrypts an input string
 # Input: r0 - String to encrypt
-# Output: 
+# Output: No return value. Outputs a file called "encrypted.txt"
 
 .text
 encrypt:
@@ -365,6 +365,10 @@ decrypt:
             # • d is our private key exponent from step 2
             # • n is the calculated modulus from step 2 for our public and private keys
         LDRB r5, [r1]       // load the encrypted byte from the read buffer
+
+		# NOTE FOR CHRIS: Andrea added this line
+		SUB r5, r5, #'0'
+
         # do c^d first
         MOV r0, r5          // move encrypted byte to r0 (exponent base)
         MOV r1, r11         // move private key to r1 (exponent power)
