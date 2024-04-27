@@ -70,6 +70,25 @@ main:
 
   # For future operations, T is in r7. Other regs can be overwritten
   
+    # -----Kevin testing-----
+    MOV r0, r7 //load totient as parameter to cpubexp
+    BL cpubexp
+
+    MOV r1, r0
+    MOV r4, r0
+    LDR r0, =cpubexpTest
+    BL printf
+
+    MOV r0, r4
+    MOV r1, r7
+    BL cprivexp
+    
+    MOV r1, r0
+    LDR r0, =cprivexpTest
+    BL printf
+
+    # -----End Kevin testing-----
+ 
   
   # pop the stack and return
   LDR lr, [sp, #0]
@@ -81,3 +100,5 @@ main:
     testTotient: .asciz "Totient is: %d\n\n"
     moduloTest:  .asciz "Modulo is: %d\n"
     gcdTest:     .asciz "GCD is: %d\n"
+    cpubexpTest: .asciz "Public key exponent is: %d\n"
+    cprivexpTest: .asciz "Private key exponent is: %d\n"
