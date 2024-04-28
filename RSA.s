@@ -112,7 +112,25 @@ main:
 		BL printf
 
 	    # T is in r7. Other regs can be overwritten
-  		
+
+                #STARTING GENERATION OF KEYS
+  	        MOV r0, r7
+                BL cpubexp
+
+                MOV r1, r0
+                MOV r4, r0
+                LDR r0, =publicKeyDisplay
+                BL printf
+
+                MOV r0, r4
+                MOV r1, r7
+                BL cprivexp
+
+                MOV r1, r0
+                MOV r5, r0
+                LDR r0, =privateKeyDisplay
+                BL printf
+                	
 		# Update r10 to True; keys are created
 		MOV r10, #1  
 
@@ -154,6 +172,7 @@ main:
 
 			# Encrypt the string
 			ADD r0, sp, #4
+                        MOV r1, r4
 			BL encrypt
 			ADD sp, sp, #40
 
@@ -172,7 +191,7 @@ main:
 			B GenKeys
 
 		ContinueDecrypt:
-			# MOV r0, rXXX  // d (private key)
+			MOV r0, r5  // d (private key)
 			MOV r1, r6  // n (modulus)			
 			BL decrypt
 
@@ -193,6 +212,8 @@ main:
 	selectionInput: .word 0
 	selectionErrorMsg: .asciz "Invalid selection.\n"
 	needKeysMsg: .asciz "Invalid: Keys not generated. Generating now...\n\n"
+        publicKeyDisplay: .asciz "The public key generated is: %d\n"
+        privateKeyDisplay: .asciz "The private key generated is: %d\n"
 	keysGeneratedMsg: .asciz "Keys generated.\n\n----------\n"
 	newLine: .asciz "\n"
 
