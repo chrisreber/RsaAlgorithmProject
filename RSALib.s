@@ -329,10 +329,95 @@ cprivexp:
 
 # end cprivexp
 
-encrypt:
-  # Contributor:
-  # encrypts an input string
+# END OF cprivexp --------
 
+# Function: encrypt
+# Contributor: Andrea Henry
+# Purpose: Encrypts an input string
+# Input: r0 - String to encrypt
+# Output: No return value. Outputs a file called "encrypted.txt"
+
+.text
+encrypt:
+	# Push the stack
+    SUB sp, sp, #28
+    STR lr, [sp]
+    STR r4, [sp, #4]
+	STR r5, [sp, #8]
+	STR r6, [sp, #12]
+	STR r7, [sp, #16]
+	STR r8, [sp, #20]
+	STR r9, [sp, #24]
+
+	# Code to loop through string from textbook p. 201-202
+	
+	# Save input string and modulus to register
+	MOV r4, r0  // input string
+	MOV r6, r1  // e
+	MOV r7, r2	// n
+	
+	# Iterate over array and encrypt each character	
+	# r4 - Array base
+	# r5 - Loop index
+
+	MOV r5, #0
+	EncryptLoopStart:
+		# Load one character from array
+		LDRB r1, [r4, r5]
+	
+		# If 0, reached end of string
+		CMP r1, #0
+		BEQ EncryptLoopEnd
+			# Calculate m^e
+			MOV r0, r1  // m (plaintext character)
+			MOV r1, r6  // e (public key)
+			BL pow  // result in r0
+
+			# Calculate m^e mod n
+			MOV r1, r7  // n (modulus)
+			BL modulo
+			MOV r9, r0  // Move output to r9
+
+			# Cannot write the integer to the buffer... Add '0' to get ASCII that 
+			# can be translated into a character
+			ADD r9, r9, #'0'
+		    LDR r8, =encryptOutBuffer
+        	STRB r9, [r8, r5]   // Save encrypted byte to output buffer
+    	
+			# Increment counter
+			ADD r5, r5, #1
+
+			B EncryptLoopStart
+
+	EncryptLoopEnd:
+		# Write buffer to file
+		LDR r0, =encryptFileName
+		LDR r1, =encryptOutBuffer
+		LDR r2, =encryptBufferSize
+		LDR r2, [r2]
+		BL writeBufferToFile
+		
+	    # Pop stack and exit
+        LDR lr, [sp, #0]
+        LDR r4, [sp, #4]
+		LDR r5, [sp, #8]
+		LDR r6, [sp, #12]
+		LDR r7, [sp, #16]
+		LDR r8, [sp, #20]
+		LDR r9, [sp, #24]
+        ADD sp, sp, #28
+        MOV pc, lr
+
+
+.data
+	encryptPrompt: .asciz "\nEnter a short phrase: "
+	encryptInputFormat: .asciz "%d"
+	encryptInput: .space 40
+	encryptFileName: .asciz "encrypted.txt"
+	encryptOutBuffer: .space 255
+	encryptBufferSize: .word 255
+	
+.text
 decrypt:
     # Contributor: Chris Reber
     # decrypts a .txt file
@@ -385,6 +470,10 @@ decrypt:
             # • d is our private key exponent from step 2
             # • n is the calculated modulus from step 2 for our public and private keys
         LDRB r5, [r1]       // load the encrypted byte from the read buffer
+
+		# NOTE FOR CHRIS: Andrea added this line
+		SUB r5, r5, #'0'
+
         # do c^d first
         MOV r0, r5          // move encrypted byte to r0 (exponent base)
         MOV r1, r11         // move private key to r1 (exponent power)
