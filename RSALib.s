@@ -216,13 +216,118 @@ isPrime:
 
 # end isPrime 
 
- cpubexp:
-  # Contributor:
-  # generates the public key
+# Function: cpubexp
+# Contributor: Kevin Chandran
+# Purpose: to prompt for and determine a valid public key exponent
+# Inputs: the totient in r0, user input while function is running
+# outputs: public key exponent in r0
 
+.text
+cpubexp:
+    #push stack
+    SUB sp, sp, #12
+    STR lr, [sp, #0]
+    STR r4, [sp, #4]
+    STR r5, [sp, #8]
+
+    MOV r4, r0 //moving totient to r4
+    
+    startLoop:
+        LDR r0, =promptEx
+        BL printf
+
+        LDR r0, =formatEx
+        LDR r1, =pubKeyExp
+        BL scanf
+
+    
+        LDR r5, =pubKeyExp
+        LDR r5, [r5]
+        
+        CMP r5, #0
+        BLEQ invalidExp
+
+        CMP r5, r4
+        BGT invalidExp
+
+        MOV r1, r4
+        MOV r0, r5
+        BL gcd
+        CMP r0, #1
+        BNE invalidExp
+
+        B validExp
+
+    invalidExp:
+        MOV r1, r5
+        LDR r0, =promptInv
+        BL printf
+        B startLoop
+
+    validExp:
+        LDR r0, =promptV
+        MOV r1, r5
+        BL printf
+        MOV r0, r5
+        
+    #pop stack
+    LDR lr, [sp, #0]
+    LDR r4, [sp, #4]
+    LDR r5, [sp, #8]
+    ADD sp, sp, #12
+    MOV pc, lr
+
+.data
+    promptEx: .asciz "Please enter a public key exponent: \n"
+    promptInv: .asciz "%d does not fit the criteria of a public key exponent, please try again: \n"
+    promptV: .asciz "%d is a valid public key exponent, it has been stored.\n"
+    formatEx: .asciz "%d"
+    pubKeyExp: .word 0
+    
+# end cpubexp
+
+# Function: cprivexp
+# Contributor: Kevin Chandran
+# Purpose: to generate a private key exponent given a public key exponent and totient 
+# Inputs: r0 should store the public key exponent, r1 should store the totient
+# outputs: private key exponent in r0
+.text
 cprivexp:
-  # Contributor:
-  # generates the private key
+    SUB sp, sp, #20
+    STR lr, [sp, #0]
+    STR r4, [sp, #4]
+    STR r5, [sp, #8]
+    STR r6, [sp, #12]
+    STR r7, [sp, #16]
+
+    MOV r4, r0 //moving public key exp into r4
+    MOV r5, r1 //move totient into r5
+    MOV r6, #0
+
+    startPrivExLoop:
+        ADD r6, r6, #1
+        MUL r7, r4, r6
+        MOV r0, r7
+        MOV r1, r5
+        BL modulo
+
+        CMP r0, #1
+        BNE startPrivExLoop
+  
+    #found valid private key exponent
+    MOV r0, r6
+
+    LDR lr, [sp, #0]
+    LDR r4, [sp, #4]
+    LDR r5, [sp, #8]
+    LDR r6, [sp, #12]
+    LDR r7, [sp, #16]
+    ADD sp, sp, #20
+    MOV pc, lr
+  
+.data
+
+# end cprivexp
 
 # END OF cprivexp --------
 
