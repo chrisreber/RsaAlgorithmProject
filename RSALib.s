@@ -10,44 +10,44 @@
 .global getPrime
 
 gcd:
-  # Contributor: Chris Reber
-  # computes and returns the greatest common divisor of two integers
-  # uses Euclidean algorithm: https://www.geeksforgeeks.org/euclidean-algorithms-basic-and-extended/#
-  # args: r0, r1 -> integers between which to compute GCD
-  # returns: gcd on r0
+	# Contributor: Chris Reber
+    # computes and returns the greatest common divisor of two integers
+	# uses Euclidean algorithm: https://www.geeksforgeeks.org/euclidean-algorithms-basic-and-extended/#
+	# args: r0, r1 -> integers between which to compute GCD
+	# returns: gcd on r0
 
-  # push the stack
-  SUB sp, sp, #8
-  STR lr, [sp]
-  STR r4, [sp, #4]
+	# push the stack
+	SUB sp, sp, #8
+	STR lr, [sp]
+	STR r4, [sp, #4]
 
-  # check if r0 is 0
-  CMP r0, #0
-  BEQ gcdReturn
+	# check if r0 is 0
+	CMP r0, #0
+	BEQ gcdReturn
 
-  # else, compute mod and start new recursive call
-  CMP r0, r1  // compare the args first, higher arg MUST be in r0
-  BGE computeMod
+	# else, compute mod and start new recursive call
+	CMP r0, r1  // compare the args first, higher arg MUST be in r0
+	BGE computeMod
 
-  # r1 is bigger than r0, swap the arguments so the modulo function works
-  MOV r2, r0
-  MOV r0, r1
-  MOV r1, r2
+	# r1 is bigger than r0, swap the arguments so the modulo function works
+	MOV r2, r0
+	MOV r0, r1
+	MOV r1, r2
 
-  computeMod:
-    MOV r4, r1  // stash r1 in r4 for safety
-    BL modulo   // returns modulo on r0
-    MOV r1, r4  // put r4 back in r1 for recursive call
-    BL gcd      // recrsively restart function
+	computeMod:
+		MOV r4, r1  // stash r1 in r4 for safety
+		BL modulo   // returns modulo on r0
+		MOV r1, r4  // put r4 back in r1 for recursive call
+		BL gcd      // recrsively restart function
 
-  gcdReturn:
-    MOV r0, r1 // GCD will be in r1 after recursive calls
+	gcdReturn:
+		MOV r0, r1 // GCD will be in r1 after recursive calls
 
-    # pop the stack and return
-    LDR lr, [sp, #0]
-    LDR r4, [sp, #4]
-    ADD sp, sp, #8
-    MOV pc, lr 
+		# pop the stack and return
+		LDR lr, [sp, #0]
+		LDR r4, [sp, #4]
+		ADD sp, sp, #8
+		MOV pc, lr 
 # end gcd
 
 # Function: pow
@@ -87,7 +87,7 @@ pow:
         ADD sp, sp, #12
         MOV pc, lr
 
-# End OF pow
+# end pow
 
 # Function: modulo
 # Contributor: Andrea
@@ -118,7 +118,7 @@ modulo:
     ADD sp, sp, #12
     MOV pc, lr 
 
-# END OF modulo -------
+# end modulo
 
 # Function: isPrime
 # Contributor: Andrea Henry
@@ -214,7 +214,7 @@ isPrime:
                 .word 7
    primeArraySize:  .word 4  
 
-# end isPrime 
+# end isPrime
 
 # Function: cpubexp
 # Contributor: Kevin Chandran
@@ -329,18 +329,18 @@ cprivexp:
 
 # end cprivexp
 
-# END OF cprivexp --------
-
 # Function: encrypt
 # Contributor: Andrea Henry
 # Purpose: Encrypts an input string
-# Input: r0 - String to encrypt
+# Inputs: r0 - String to encrypt
+#		  r1 - Public key (e)
+#		  r2 - pq (n)
 # Output: No return value. Outputs a file called "encrypted.txt"
 
 .text
 encrypt:
 	# Push the stack
-    SUB sp, sp, #28
+    SUB sp, sp, #32
     STR lr, [sp]
     STR r4, [sp, #4]
 	STR r5, [sp, #8]
@@ -348,6 +348,7 @@ encrypt:
 	STR r7, [sp, #16]
 	STR r8, [sp, #20]
 	STR r9, [sp, #24]
+	STR r10, [sp, #28]
 
 	# Code to loop through string from textbook p. 201-202
 	
@@ -359,7 +360,7 @@ encrypt:
 	# Iterate over array and encrypt each character	
 	# r4 - Array base
 	# r5 - Loop index
-
+	MOV r10, #0
 	MOV r5, #0
 	EncryptLoopStart:
 		# Load one character from array
@@ -372,18 +373,15 @@ encrypt:
 			MOV r0, r1  // m (plaintext character)
 			MOV r1, r6  // e (public key)
 			BL pow  // result in r0
-
+			
 			# Calculate m^e mod n
 			MOV r1, r7  // n (modulus)
 			BL modulo
-			MOV r9, r0  // Move output to r9
+			
+			MOV r1, r10			
+			BL writeIntToBuffer	
+    		MOV r10, r0
 
-			# Cannot write the integer to the buffer... Add '0' to get ASCII that 
-			# can be translated into a character
-			ADD r9, r9, #'0'
-		    LDR r8, =encryptOutBuffer
-        	STRB r9, [r8, r5]   // Save encrypted byte to output buffer
-    	
 			# Increment counter
 			ADD r5, r5, #1
 
@@ -405,7 +403,8 @@ encrypt:
 		LDR r7, [sp, #16]
 		LDR r8, [sp, #20]
 		LDR r9, [sp, #24]
-        ADD sp, sp, #28
+		LDR r10, [sp, #28]
+        ADD sp, sp, #32
         MOV pc, lr
 
 
@@ -416,7 +415,98 @@ encrypt:
 	encryptFileName: .asciz "encrypted.txt"
 	encryptOutBuffer: .space 255
 	encryptBufferSize: .word 255
+	testEncCalc: .asciz "The encrypted calculation is: %d\n"
 	
+# end encrypt
+
+# Function: writeIntToBuffer
+# Contributor: Andrea Henry
+# Purpose: Converts a number to a string and writes it to the buffer 
+# that is printed to the encrypted file
+# Inputs: r0 - Numebr to write
+#		  r1 - The position in the buffer to start writing the number
+# Output: No output. Additions are saved in the buffer variable
+
+.text
+writeIntToBuffer:
+
+	# Push to the stack
+	SUB sp, sp, #20
+	STR lr, [sp]
+	STR r4, [sp, #4]
+	STR r5, [sp, #8]
+	STR r6, [sp, #12]
+	STR r7, [sp, #16]
+	STR r8, [sp, #20]
+	
+	MOV r4, r0  // The number to write (n)
+	MOV r5, #0  // The index of the divArray to pull dividend from
+	LDR r6, =arrSize  // Size of divArray
+	LDR r6, [r6]
+	MOV r7, r1  // The starting index to print n to
+	LDR r8, =divArray  // The array with dividends
+
+	DivLoopStart:
+
+		# If current index is at end of divArray, stop
+		CMP r5, r6
+		BEQ DivLoopEnd
+
+			# Divide n by a power of 10 to get each digit
+			MOV r0, r4
+			ADD r1, r8, r5, LSL #2  // Value at index r5 from divArray
+			LDR r1, [r1]
+			BL __aeabi_idiv
+
+			# If the dividend was too big, go to next value
+			CMP r0, #0
+			BEQ NextVal
+
+				# Get rid of first digit by getting remainder 
+				MUL r3, r0, r1
+				SUB r3, r4, r3
+ 
+				# Convert digit to ASCII equivalent
+				ADD r0, r0, #'0'
+
+				# Save encrypted byte to buffer
+			   	LDR r1, =encryptOutBuffer
+        		STRB r0, [r1, r7] 
+				MOV r4, r3
+				ADD r7, r7, #1
+
+			NextVal:
+				ADD r5, r5, #1  // Increment index for divArray
+				B DivLoopStart
+
+	DivLoopEnd:
+		# Add a space after each number
+		MOV r0, #32
+		LDR r1, =encryptOutBuffer
+		STRB r0, [r1, r7]
+		
+		# Save the index to the buffer to print the next value
+		# Add one so there is a space in between
+		MOV r0, r7
+		ADD r0, r0, #1
+
+		# Pop the stack
+		LDR lr, [sp]
+		LDR r4, [sp, #4]
+		LDR r5, [sp, #8]
+		LDR r6, [sp, #12]
+		LDR r7, [sp, #16]
+		ADD sp, sp, #20
+		MOV pc, lr
+
+.data
+divArray: .word 10000
+		  .word 1000
+		  .word 100
+		  .word 10
+		  .word 1 
+arrSize: .word 5
+
 .text
 decrypt:
     # Contributor: Chris Reber
@@ -527,6 +617,7 @@ decrypt:
     readBuffer:     .space  255
     outBuffer:      .space  255
     bufferSize:     .word   255
+
 # end decrypt function
 
 .text
@@ -585,6 +676,7 @@ writeBufferToFile:
         LDR lr, [sp, #0]
         ADD sp, sp, #4
         MOV pc, lr 
+
 # end function writeBufferToFile
 
 # Function: getPrime

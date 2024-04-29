@@ -44,6 +44,7 @@ main:
 						B ExitProgram
 
 	GenKeys:
+
 		# Prompt for and receive input for p and q
 		# Contributor: Andrea Henry
 	   
@@ -62,22 +63,12 @@ main:
 
 		MUL r6, r4, r5  // r6 = n = pq
 
-		# Testing: Check initial N
-		LDR r0, =testN1
-		MOV r1, r6
-		BL printf
-
 		# Calculate totient, T = (p-1)(q-1)
 		# Contributor: Andrea Henry
 
 		SUB r4, r4, #1  // p-1
 		SUB r5, r5, #1  // q-1
 		MUL r7, r4, r5
-			
-		# FOR TESTING: Display totient 
-		LDR r0, =testTotient
-		MOV r1, r7
-		BL printf
 
 	    # T is in r7. Other regs can be overwritten
 
@@ -129,18 +120,13 @@ main:
 			ADD r1, sp, #4
 			BL scanf
 
-			# Testing: Check that N is still the same (should be in r6)
-			LDR r0, =testN2
-			MOV r1, r6
-			BL printf
-
 			# Load e and n into r1, r2
-			MOV r1, #7  // temporary, p=3, q=5
+			MOV r1, r4
 			MOV r2, r6 
 
 			# Encrypt the string
 			ADD r0, sp, #4
-                        MOV r1, r4
+            MOV r1, r4
 			BL encrypt
 			ADD sp, sp, #40
 
