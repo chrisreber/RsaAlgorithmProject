@@ -380,12 +380,12 @@ encrypt:
 
 			# Cannot write the integer to the buffer... Add '0' to get ASCII that 
 			# can be translated into a character
-			ADD r9, r9, #'0'
+			# ADD r9, r9, #'0'
 		    LDR r8, =encryptOutBuffer
         	STRB r9, [r8, r5]   // Save encrypted byte to output buffer
     	
 			# Increment counter
-			ADD r5, r5, #1
+			ADD r5, r5, #1  
 
 			B EncryptLoopStart
 
@@ -472,7 +472,7 @@ decrypt:
         LDRB r5, [r1]       // load the encrypted byte from the read buffer
 
 		# NOTE FOR CHRIS: Andrea added this line
-		SUB r5, r5, #'0'
+		# SUB r5, r5, #'0'
 
         # do c^d first
         MOV r0, r5          // move encrypted byte to r0 (exponent base)
