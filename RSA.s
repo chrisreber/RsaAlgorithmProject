@@ -44,37 +44,6 @@ main:
 						B ExitProgram
 
 	GenKeys:
-		# -----Chris testing-----
-		# double check modulo function
-		MOV r0, #4
-		MOV r1, #3
-		BL modulo
-		MOV r1, r0
-		LDR r0, =moduloTest
-		BL printf
-
-		MOV r0, #4
-		MOV r1, #1
-		BL modulo
-		MOV r1, r0
-		LDR r0, =moduloTest
-		BL printf
-
-		# test greatest common factor function
-		MOV r0, #16
-		MOV r1, #12
-		BL gcd
-		MOV r1, r0
-		LDR r0, =gcdTest
-		BL printf
-
-		MOV r0, #16
-		MOV r1, #11
-		BL gcd
-		MOV r1, r0
-		LDR r0, =gcdTest
-		BL printf
-		# -----End Chris testing-----
 
 		# Prompt for and receive input for p and q
 		# Contributor: Andrea Henry
@@ -94,22 +63,12 @@ main:
 
 		MUL r6, r4, r5  // r6 = n = pq
 
-		# Testing: Check initial N
-		LDR r0, =testN1
-		MOV r1, r6
-		BL printf
-
 		# Calculate totient, T = (p-1)(q-1)
 		# Contributor: Andrea Henry
 
 		SUB r4, r4, #1  // p-1
 		SUB r5, r5, #1  // q-1
 		MUL r7, r4, r5
-			
-		# FOR TESTING: Display totient 
-		LDR r0, =testTotient
-		MOV r1, r7
-		BL printf
 
 	    # T is in r7. Other regs can be overwritten
 
@@ -160,11 +119,6 @@ main:
 			LDR r0, =encryptInputFormat
 			ADD r1, sp, #4
 			BL scanf
-
-			# Testing: Check that N is still the same (should be in r6)
-			LDR r0, =testN2
-			MOV r1, r6
-			BL printf
 
 			# Load e and n into r1, r2
 			MOV r1, r4

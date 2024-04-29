@@ -373,14 +373,7 @@ encrypt:
 			MOV r0, r1  // m (plaintext character)
 			MOV r1, r6  // e (public key)
 			BL pow  // result in r0
-			MOV r9, r0
-
-			# Testing raw and adjusted encrypted calcs
-			LDR r0, =testEncCalc
-			MOV r1, r9
-			BL printf
-
-			MOV r0, r9
+			
 			# Calculate m^e mod n
 			MOV r1, r7  // n (modulus)
 			BL modulo
