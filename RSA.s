@@ -167,12 +167,12 @@ main:
 			BL printf
 
 			# Load e and n into r1, r2
-			MOV r1, #7  // temporary, p=3, q=5
+			MOV r1, r4
 			MOV r2, r6 
 
 			# Encrypt the string
 			ADD r0, sp, #4
-                        MOV r1, r4
+            MOV r1, r4
 			BL encrypt
 			ADD sp, sp, #40
 
