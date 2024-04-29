@@ -487,6 +487,11 @@ writeIntToBuffer:
 				B DivLoopStart
 
 	DivLoopEnd:
+		# Add a space after each number
+		MOV r0, #32
+		LDR r1, =encryptOutBuffer
+		STRB r0, [r1, r7]
+		
 		# Save the index to the buffer to print the next value
 		# Add one so there is a space in between
 		MOV r0, r7
